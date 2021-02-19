@@ -21,41 +21,64 @@ let todos = [
   },
 ];
 
-const find = () => Promise.resolve([...todos]);
+const find = () => simulateNetwork(() => Promise.resolve([...todos]));
+
 const findById = (id) =>
-  new Promise((resolve) => {
-    const todo = todos.find((t) => t.id == id);
+  simulateNetwork(
+    () =>
+      new Promise((resolve) => {
+        const todo = todos.find((t) => t.id == id);
 
-    return resolve(todo);
-  });
+        return resolve(todo);
+      })
+  );
+
 const create = (todo) =>
-  new Promise((resolve) => {
-    todo.id = uuidv4();
-    todo.createdAt = new Date();
-    todo.completed = false;
-    todos.push(todo);
+  simulateNetwork(
+    () =>
+      new Promise((resolve) => {
+        todo.id = uuidv4();
+        todo.createdAt = new Date();
+        todo.completed = false;
+        todos.push(todo);
 
-    return resolve({ ...todo });
-  });
+        return resolve({ ...todo });
+      })
+  );
+
 const remove = (id) =>
-  new Promise((resolve) => {
-    const oldLength = todos.length;
-    todos = todos.filter((t) => t.id != id);
-    const length = todos.length;
+  simulateNetwork(
+    () =>
+      new Promise((resolve) => {
+        const oldLength = todos.length;
+        todos = todos.filter((t) => t.id != id);
+        const length = todos.length;
 
-    const deleted = length < oldLength;
-    return resolve(deleted);
-  });
+        const deleted = length < oldLength;
+        return resolve(deleted);
+      })
+  );
+
 const update = (todo, id) =>
-  new Promise((resolve) => {
-    const index = todos.findIndex((t) => t.id == id);
-    if (index == -1) {
-      return resolve(null);
-    }
-    todos[index] = { ...todos[index], ...todo, id };
+  simulateNetwork(
+    () =>
+      new Promise((resolve) => {
+        const index = todos.findIndex((t) => t.id == id);
+        if (index == -1) {
+          return resolve(null);
+        }
+        todos[index] = { ...todos[index], ...todo, id };
 
-    return resolve({ ...todos[index] });
-  });
+        return resolve({ ...todos[index] });
+      })
+  );
+
+const simulateNetwork = (fn) => {
+  const shouldFail = Math.random() < 0.3;
+  return shouldFail
+    ? Promise.reject({ status: 503, message: "Service Unavailable" })
+    : fn();
+};
 
 module.exports = {
   find,
